@@ -11,11 +11,11 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return  MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Sistema de Login',
-      theme: AppTheme.lightTheme,                                                         
-      home: const LoginScreen(),
-      );
+      theme: AppTheme.lightTheme,
+      home:  const LoginScreen(),
+    );
   }
 }

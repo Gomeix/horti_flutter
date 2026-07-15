@@ -1,123 +1,84 @@
+
 import 'package:flutter/material.dart';
-import 'package:hortiflutter/models/user_model.dart';
-import 'package:hortiflutter/screens/register_screen.dart';
-import 'package:hortiflutter/screens/home_screen.dart';
+import 'package:hortiflutter/services/user_service.dart';
+import 'home_screen.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState ()=> _LoginScreenState();
-
+  State<LoginScreen> createState() => _LoginScreenState();
 }
-class _LoginScreenState extends State<LoginScreen> 
-  with SingleTickerProviderStateMixin {
-    final loginScreen = TextEditingController();
-    final senhaScreen = TextEditingController();
 
-    UserModel? usuarioCadastrado;
+class _LoginScreenState extends State<LoginScreen> {
+  final loginController = TextEditingController();
+  final senhaController = TextEditingController();
+  
 
-    late AnimationController _controller;
-    late Animation<double> _animation;
+  bool loading = false;
 
-    @override
-  void initState() {  // iniciar a animação nas caixas de texto (input)
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
+  Future<void> fazerLogin() async {
+    setState(() => loading = true);
+
+    final user = await UserService.login(
+      loginController.text,
+      senhaController.text,
     );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _controller.forward();
-  }
 
-  @override
-  void dispose() {
-    loginScreen.dispose();
-    senhaScreen.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
+    setState(() => loading = false);
 
-  void fazerLogin() {
-    if (usuarioCadastrado == null) {
-      // Usuário não cadastrado, exibir mensagem de erro
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Usuário não cadastrado.')),
+    if (user != null) {
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomeScreen(nome: user.nome, userId: user.id!)),
       );
-    } else if (loginScreen.text == usuarioCadastrado!.login &&
-        senhaScreen.text == usuarioCadastrado!.senha) {
-      // Login bem-sucedido, redirecionar para a tela principal
-      Navigator.pushReplacementNamed(context, '/home');
     } else {
-      // Login ou senha incorretos, exibir mensagem de erro
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login ou senha incorretos.')),
-      );
-    }
-  }
-
-  Future<void> abrirCadastro() async {
-    final resultado = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
-    if (resultado != null && resultado is UserModel) {
-      setState(() {
-        usuarioCadastrado = resultado;
-      });
+      ScaffoldMessenger.of(
+        // ignore: use_build_context_synchronously
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Login inválido")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _animation,
-      child: Scaffold(
-        appBar: AppBar(title: const Text("Login")),
-        body: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              const Icon(Icons.lock, size: 80, color: Colors.blue),
-
-              const SizedBox(height: 20),
-
-              TextField(
-                controller: loginScreen,
-                decoration: const InputDecoration(
-                  labelText: "Login",
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              TextField(
-                controller: senhaScreen,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: "Senha",
-                  prefixIcon: Icon(Icons.lock),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              ElevatedButton(
-                onPressed: fazerLogin,
-                child: const Text("Entrar"),
-              ),
-
-              TextButton(
-                onPressed: abrirCadastro,
-                child: const Text("Criar novo perfil"),
-              ),
-            ],
-          ),
+    return Scaffold(
+      appBar: AppBar(title: const Text("Login")),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            TextField(
+              controller: loginController,
+              decoration: const InputDecoration(labelText: "Login"),
+            ),
+            const SizedBox(height: 15),
+            TextField(
+              controller: senhaController,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: "Senha"),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: loading ? null : fazerLogin,
+              child: loading
+                  ? const CircularProgressIndicator()
+                  : const Text("Entrar"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
+              },
+              child: const Text("Criar conta"),
+            ),
+          ],
         ),
       ),
     );
   }
-
 }
